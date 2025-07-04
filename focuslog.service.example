@@ -1,0 +1,37 @@
+# --- START OF FILE focuslog.service.example ---
+#
+# Systemd service file for FocusLog Server
+#
+# INSTRUCTIONS:
+# 1. Edit the User, Group, WorkingDirectory, and ExecStart paths below
+#    to match your system.
+# 2. Rename this file to 'focuslog.service'.
+# 3. Copy it to your systemd user directory:
+#    cp focuslog.service ~/.config/systemd/user/
+# 4. Enable and start the service:
+#    systemctl --user daemon-reload
+#    systemctl --user enable --now focuslog
+#
+[Unit]
+Description=FocusLog - Desktop Activity Logger
+After=network.target graphical-session.target
+PartOf=graphical-session.target
+
+[Service]
+# --- !!! EDIT THESE LINES !!! ---
+# User and Group should be your username
+User=your_username
+Group=your_username
+# WorkingDirectory should be the full path to the project folder
+WorkingDirectory=/home/your_username/path/to/focuslog
+# ExecStart should be the full path to your python executable and the script
+ExecStart=/usr/bin/python /home/your_username/path/to/focuslog/focuslog.py
+
+# This is required for D-Bus to work correctly for screen lock detection
+Environment=DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/%I/bus
+
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=graphical-session.target

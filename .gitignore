@@ -1,0 +1,20 @@
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local database and logs
+*.sqlite
+*.log
+*.log.*
+
+# User-specific configuration
+# Users should copy config.py.example to config.py
+# and this file should not be tracked by git.
+config.py
+
+# IDE and OS files
+.vscode/
+.idea/
+.DS_Store
