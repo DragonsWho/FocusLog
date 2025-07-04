@@ -13,8 +13,11 @@ __pycache__/
 # Users should copy config.py.example to config.py
 # and this file should not be tracked by git.
 config.py
+focuslog.service
 
 # IDE and OS files
 .vscode/
 .idea/
 .DS_Store
+
+venv/

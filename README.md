@@ -10,29 +10,30 @@ This server uses `FastMCP` for communication, `Ollama` for AI-powered anonymizat
 -   **APM Tracking**: Calculates your Actions Per Minute (APM) based on keyboard and mouse activity.
 -   **Timeline Aggregation**: Groups consecutive activities into a compressed, easy-to-read timeline.
 -   **Two-Stage Anonymization**:
-    1.  **Hard-coded Filter**: Guarantees removal of user-defined sensitive keywords (e.g., nicknames, emails).
-    2.  **LLM Anonymization**: Uses a local Ollama model to intelligently remove any other Personally Identifiable Information (PII).
+    1.  **Hard-coded Filter**: Guarantees removal of user-defined sensitive keywords.
+    2.  **LLM Anonymization**: Uses a local Ollama model to intelligently remove any other PII.
 -   **Title Sanitization**: Cleans up and shortens excessively long window titles.
 -   **Reliable & Configurable**: Features log rotation, graceful shutdown, and all settings are managed in a separate `config.py` file.
--   **Systemd Service**: Can be run as a persistent background service.
+-   **Systemd Service**: Can be run as a persistent background service for maximum reliability.
 
 ## Requirements
 
 ### System Dependencies
 
-You must have the following command-line tools installed:
+> [!IMPORTANT]
+> **Compatibility Note:** This server is designed specifically for **Linux desktop environments running on the X11 display server**. It relies on tools that are part of the X11 ecosystem and will **not** work on Windows, macOS, or native Wayland sessions.
+
+You must have the following command-line tools and libraries installed:
 -   `xdotool`: For getting the active window title.
 -   `xprintidle`: For checking user idle time.
 -   `ollama`: For running the local LLM.
+-   **PyGObject**: For D-Bus communication (used to detect screen lock).
 
-On Debian/Ubuntu, you can install them with:
+On **Debian/Ubuntu/Linux Mint**, you can install them all with:
 ```bash
 sudo apt update
-sudo apt install xdotool xprintidle
+sudo apt install xdotool xprintidle python3-gi python3-gi-cairo gir1.2-gtk-3.0
 ```
-
-> [!IMPORTANT]
-> **Compatibility Note:** This server is designed specifically for **Linux desktop environments running on the X11 display server**. It relies on tools that are part of the X11 ecosystem and will **not** work on Windows, macOS, or native Wayland sessions.
 
 For `Ollama`, follow the official installation instructions at [ollama.com](https://ollama.com/). After installing, make sure you have pulled a model:
 ```bash
@@ -41,9 +42,9 @@ ollama pull gemma3
 
 ### Python Dependencies
 
-The project requires Python 3.8+ and a few libraries.
+The project requires Python 3.8+ and uses a virtual environment to manage its packages.
 
-## Installation
+## Installation & Setup
 
 1.  **Clone the repository:**
     ```bash
@@ -51,28 +52,37 @@ The project requires Python 3.8+ and a few libraries.
     cd focuslog
     ```
 
-2.  **Install Python packages:**
+2.  **Create a virtual environment:**
+    We need to create a virtual environment that has access to the system's `PyGObject` library.
     ```bash
-    pip install -r requirements.txt
+    python3 -m venv venv --system-site-packages
     ```
 
-3.  **Create your configuration file:**
-    Copy the example configuration file.
+3.  **Activate the environment and install packages:**
+    ```bash
+    source venv/bin/activate
+    pip install -r requirements.txt
+    deactivate
+    ```
+    *(You can leave the environment by typing `deactivate`)*.
+
+4.  **Create your configuration file:**
     ```bash
     cp config.py.example config.py
     ```
 
-4.  **Edit your configuration:**
+5.  **Edit your configuration:**
     Open `config.py` in a text editor.
-    -   **Crucially, fill in the `FORBIDDEN_KEYWORDS` list** with any personal data (nicknames, email, etc.) you want to ensure is always removed. **This file is ignored by git, so your secrets are safe.**
-    -   Adjust other settings like the `OLLAMA_MODEL` or `MCP_PORT` if you wish.
+    -   **Crucially, fill in the `FORBIDDEN_KEYWORDS` list** with any personal data you want to ensure is always removed.
+    -   Adjust other settings like `OLLAMA_MODEL` or `MCP_PORT` if you wish.
 
 ## Usage
 
 ### Manual Start (for testing)
 
-You can run the server directly from your terminal:
+To run the server manually for testing, first activate the virtual environment:
 ```bash
+source venv/bin/activate
 python focuslog.py
 ```
 The server will start and show logs in the console. Press `Ctrl+C` to stop it.
@@ -82,25 +92,19 @@ The server will start and show logs in the console. Press `Ctrl+C` to stop it.
 For continuous, reliable background operation, it's best to run FocusLog as a `systemd` user service. This will automatically start the server when you log in and restart it if it ever crashes.
 
 1.  **Prepare the service file:**
-    Copy the example service file.
     ```bash
     cp focuslog.service.example focuslog.service
     ```
 
 2.  **Edit `focuslog.service`:**
-    Open the file and replace the placeholder paths and username with your actual ones.
-    - `User=your_username` -> `User=myuser`
-    - `Group=your_username` -> `Group=myuser`
-    - `WorkingDirectory=/home/your_username/path/to/focuslog` -> `WorkingDirectory=/home/myuser/projects/focuslog`
-    - `ExecStart=...` -> Update the path here as well.
+    Open the file and replace the placeholder paths with your actual ones.
+    -   `WorkingDirectory=/home/your_username/path/to/focuslog` -> e.g., `WorkingDirectory=/home/dw/projects/focuslog`
+    -   `ExecStart=...` -> Update the path to `venv/bin/python` and `focuslog.py` as well.
+    -   **Important**: Do NOT add `User=` or `Group=` lines. `systemd --user` handles this automatically.
 
 3.  **Install and enable the service:**
-    First, create the directory for user services if it doesn't exist:
     ```bash
     mkdir -p ~/.config/systemd/user
-    ```
-    Now, copy the file and start the service:
-    ```bash
     cp focuslog.service ~/.config/systemd/user/
     systemctl --user daemon-reload
     systemctl --user enable --now focuslog.service
@@ -112,9 +116,8 @@ For continuous, reliable background operation, it's best to run FocusLog as a `s
     -   **View logs:** `journalctl --user -u focuslog.service -f` (`-f` to follow live)
     -   **Stop:** `systemctl --user stop focuslog.service`
     -   **Start:** `systemctl --user start focuslog.service`
- 
 
-## How It Works
+## How It Works 
 
 The server runs two main background threads:
 1.  **APM Sensor**: Checks for user input every half-second to update an activity "tick" counter.

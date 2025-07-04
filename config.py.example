@@ -1,0 +1,56 @@
+# --- START OF FILE config.py ---
+
+#
+# Configuration for the FocusLog Server
+#
+# INSTRUCTIONS:
+# 1. Rename this file to `config.py`.
+# 2. Fill in your personal details in the FORBIDDEN_KEYWORDS list.
+# 3. Adjust other settings as needed.
+#
+
+# --- Core Server Settings ---
+MCP_PORT = 8001                 # Port for the FastMCP server
+LOG_INTERVAL_SECONDS = 10       # How often to log activity (in seconds)
+DB_FILE = "activity_log.sqlite" # Database file name
+LOG_RETENTION_HOURS = 24        # How long to keep logs in the database (in hours)
+
+# --- Logging Settings ---
+LOG_FILE = "focuslog_server.log" # Filename for the main log
+LOG_MAX_BYTES = 5 * 1024 * 1024 # Max size of the log file before rotation (e.g., 5MB)
+LOG_BACKUP_COUNT = 5            # How many old log files to keep
+
+# --- APM (Actions Per Minute) Settings ---
+APM_POLL_INTERVAL_S = 0.5   # How often to check for user input (in seconds)
+APM_WINDOW_SECONDS = 60     # The time window for calculating APM (in seconds)
+
+# --- Ollama Settings ---
+OLLAMA_MODEL = "gemma3"         # The Ollama model to use for anonymization
+OLLAMA_TIMEOUT_S = 60           # Timeout for calls to Ollama (in seconds)
+
+# --- Title Sanitization Settings ---
+MAX_TITLE_LENGTH = 120  # Max length for window titles before shortening
+KNOWN_BROWSERS = [      # List of browsers for special rule handling
+    "Google Chrome",
+    "Mozilla Firefox",
+    "Brave",
+    "Vivaldi",
+]
+# Rules to simplify specific, noisy browser tab titles.
+# Format: "keyword in original title": "simplified app name"
+TITLE_CLEANUP_RULES = {
+    "| Gelbooru": "Gelbooru",
+    # "Pixiv": "Pixiv",
+}
+
+# --- !!! IMPORTANT: Anonymization Keywords !!! ---
+# Add any personal information you want to be *guaranteed* to be removed
+# from window titles before they are processed by the LLM.
+# This is case-insensitive.
+#
+# This list should NOT be committed to a public repository.
+FORBIDDEN_KEYWORDS = [
+    # "your_nickname",
+    # "your_real_name",
+    # "your_email@example.com",
+]
